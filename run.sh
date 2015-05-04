@@ -1,42 +1,20 @@
 #!/bin/bash
 
-set -e
+cd grafana-${GRAFANA_VERSION}
 
-INFLUXDB_PASS=${INFLUXDB_ENV_INFLUXDB_INIT_PWD:-${INFLUXDB_PASS}}
-INFLUXDB_PASS=${INFLUXDB_1_ENV_INFLUXDB_INIT_PWD:-${INFLUXDB_PASS}}
 
-ELASTICSEARCH_USER=${ELASTICSEARCH_ENV_ELASTICSEARCH_USER:-${ELASTICSEARCH_USER}}
-ELASTICSEARCH_USER=${ELASTICSEARCH_1_ENV_ELASTICSEARCH_USER:-${ELASTICSEARCH_USER}}
-ELASTICSEARCH_PASS=${ELASTICSEARCH_ENV_ELASTICSEARCH_PASS:-${ELASTICSEARCH_PASS}}
-ELASTICSEARCH_PASS=${ELASTICSEARCH_1_ENV_ELASTICSEARCH_PASS:-${ELASTICSEARCH_PASS}}
+function create_db {
+    curl --cookie-jar /tmp/cookiefile 'http://localhost/login' -H 'Content-Type: application/json;charset=UTF-8' --data-binary '{"user":"admin","email":"","password":"admin"}'
 
-if [ "${ELASTICSEARCH_HOST}" == "**None**" ]; then
-    unset ELASTICSEARCH_HOST
+    curl --cookie /tmp/cookiefile 'http://localhost/api/datasources' -X PUT -H 'Content-Type: application/json;charset=utf-8' --data '{"name":"influxdb","type":"influxdb","url":"http://'${INFLUXDB_HOST}':'${INFLUXDB_PORT}'","access":"proxy","isDefault":true,"database":"'${INFLUXDB_NAME}'","user":"'${INFLUXDB_USER}'","password":"'${INFLUXDB_PASS}'"}'
+
+    echo -e "Created InfluxDB datasources."
+}
+
+if [ -f "/.pre_db_created" ]; then
+    echo "=> Data sources had been created before, skipping ..."
+else
+    (sleep 60 && create_db && touch "/.pre_db_created")&
 fi
 
-if [ "${ELASTICSEARCH_USER}" == "**None**" ]; then
-    unset ELASTICSEARCH_USER
-fi
-
-if [ "${ELASTICSEARCH_PASS}" == "**None**" ]; then
-    unset ELASTICSEARCH_PASS
-fi
-
-if [ "${HTTP_PASS}" == "**Random**" ]; then
-    unset HTTP_PASS
-fi
-
-if [ ! -f /.basic_auth_configured ]; then
-    /set_basic_auth.sh
-fi
-
-if [ ! -f /.influx_db_configured ]; then
-    /set_influx_db.sh
-fi
-
-if [ ! -f /.elasticsearch_configured ]; then
-    /set_elasticsearch.sh
-fi
-
-echo "=> Starting and running Nginx..."
-/usr/sbin/nginx
+ ./bin/grafana-server -config="/grafana.ini"
