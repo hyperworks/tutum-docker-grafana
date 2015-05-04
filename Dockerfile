@@ -3,7 +3,6 @@ MAINTAINER Feng Honglin <hfeng@tutum.co>
 
 ENV GRAFANA_VERSION 2.0.2
 
-https://grafanarel.s3.amazonaws.com/builds/grafana-2.0.2.linux-x64.tar.gz
 RUN apt-get update && \
     apt-get install -y wget pwgen apache2-utils && \
     wget https://grafanarel.s3.amazonaws.com/builds/grafana-${GRAFANA_VERSION}.linux-x64.tar.gz -O grafana.tar.gz && \
