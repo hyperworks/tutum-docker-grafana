@@ -7,6 +7,8 @@ RUN apt-get update && \
     wget https://grafanarel.s3.amazonaws.com/builds/grafana-${GRAFANA_VERSION}.linux-x64.tar.gz -O grafana.tar.gz && \
     tar zxf grafana.tar.gz
 
+ENV BUILD 1
+
 ADD /grafana.ini grafana.ini
 
 ENV INFLUXDB_HOST influxdb
